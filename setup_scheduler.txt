@@ -1,0 +1,23 @@
+# Windows Task Scheduler Setup for BOL Automation
+# 
+# To schedule your script to run automatically:
+# 
+# 1. Open Task Scheduler (Windows + R, type "taskschd.msc")
+# 2. Create Basic Task
+# 3. Name: "BOL PDF Processing"
+# 4. Trigger: Daily (or every few hours)
+# 5. Action: Start a program
+# 6. Program: python
+# 7. Arguments: extract_and_insert.py
+# 8. Start in: c:\Users\PatRutledge\bill_of_lading_automation
+#
+# OR use this PowerShell command to create the task:
+
+# PowerShell command to create scheduled task (run as Administrator):
+$Action = New-ScheduledTaskAction -Execute "python" -Argument "extract_and_insert.py" -WorkingDirectory "c:\Users\PatRutledge\bill_of_lading_automation"
+$Trigger = New-ScheduledTaskTrigger -Daily -At "9:00AM"
+$Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+Register-ScheduledTask -TaskName "BOL PDF Processing" -Action $Action -Trigger $Trigger -Settings $Settings -Description "Automatically process Bill of Lading PDFs from email"
+
+# Alternative: Run every 4 hours
+# $Trigger = New-ScheduledTaskTrigger -Once -At "8:00AM" -RepetitionInterval (New-TimeSpan -Hours 4)

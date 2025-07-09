@@ -1,4 +1,37 @@
+# Ignore sensitive configuration files
+config.py
+*.env
+.env
+
+# Ignore downloaded attachments (may contain sensitive data)
+attachments/
+*.pdf
+
+# Ignore log files (may contain sensitive data)
+order_log.csv
+*.log
+
+# Python cache
 venv/
 __pycache__/
 *.pyc
-.env
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Extracted text files (may contain sensitive data)
+*_extracted_text.txt
