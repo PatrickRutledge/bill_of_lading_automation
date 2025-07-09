@@ -295,18 +295,49 @@ def parse_bol_data(text):
     return bol_data
 
 def connect_sql(config):
-    """Connect to Azure SQL database"""
-    conn_str = (
-        f"DRIVER={config['AZURE_DRIVER']};"
-        f"SERVER={config['AZURE_SERVER']};"
-        f"DATABASE={config['AZURE_DATABASE']};"
-        f"UID={config['AZURE_USERNAME']};"
-        f"PWD={config['AZURE_PASSWORD']};"
-        "Encrypt=yes;"
-        "TrustServerCertificate=no;"
-        "Connection Timeout=30;"
-    )
-    return pyodbc.connect(conn_str)
+    """Connect to Azure SQL Database"""
+    
+    # Log available ODBC drivers for debugging
+    try:
+        available_drivers = pyodbc.drivers()
+        logging.info(f"Available ODBC drivers: {available_drivers}")
+    except Exception as e:
+        logging.warning(f"Could not list ODBC drivers: {e}")
+    
+    # Try different drivers available in Azure Functions Linux environment
+    drivers_to_try = [
+        "{ODBC Driver 17 for SQL Server}",  # Most common in Azure Linux
+        "{ODBC Driver 13 for SQL Server}",  # Older but widely available
+        "{ODBC Driver 11 for SQL Server}",  # Even older fallback
+        "{FreeTDS}",                        # Open source driver
+        "{SQL Server}",                     # Basic driver
+    ]
+    
+    last_error = None
+    for driver in drivers_to_try:
+        try:
+            conn_str = (
+                f"DRIVER={driver};"
+                f"SERVER={config['AZURE_SERVER']};"
+                f"DATABASE={config['AZURE_DATABASE']};"
+                f"UID={config['AZURE_USERNAME']};"
+                f"PWD={config['AZURE_PASSWORD']};"
+                "Encrypt=yes;"
+                "TrustServerCertificate=no;"
+                "Connection Timeout=30;"
+            )
+            logging.info(f"Trying SQL driver: {driver}")
+            conn = pyodbc.connect(conn_str)
+            logging.info(f"✅ Successfully connected with driver: {driver}")
+            return conn
+        except Exception as e:
+            logging.warning(f"❌ Driver {driver} failed: {str(e)}")
+            last_error = e
+            continue
+    
+    # If all drivers fail, raise the last error
+    logging.error(f"All SQL drivers failed. Last error: {last_error}")
+    raise last_error
 
 def insert_bol_data_and_log(conn, bol_data, log_entry):
     """Insert parsed BOL data into dbo.orders table"""
@@ -402,33 +433,45 @@ def send_rejection_email(config, original_subject, pdf_content, filename):
 
 def process_bol_emails():
     """Main processing function for Azure"""
+    logger.info("=== Starting BOL Email Processing ===")
+    
     try:
+        logger.info("Loading configuration from environment variables...")
         config = get_config()
-        logger.info("Starting BOL processing...")
+        logger.info("Configuration loaded successfully")
         
         # Connect to email
+        logger.info("Connecting to Gmail...")
         mail = connect_email(config)
+        
+        logger.info("Fetching PDF attachments...")
         pdf_attachments = fetch_pdf_attachments(mail)
         
         if not pdf_attachments:
             logger.info("No PDF attachments found in unread emails.")
             return {"processed": 0, "successful": 0, "failed": 0}
         
+        logger.info(f"Found {len(pdf_attachments)} PDF attachments to process")
+        
         # Connect to database
+        logger.info("Connecting to Azure SQL database...")
         conn = connect_sql(config)
-        logger.info("Connected to Azure SQL database.")
+        logger.info("Connected to Azure SQL database successfully")
         
         processed_count = 0
         success_count = 0
         failed_count = 0
         
         for att in pdf_attachments:
-            logger.info(f"Processing {att['attachment_name']}...")
+            logger.info(f"--- Processing attachment {processed_count + 1}/{len(pdf_attachments)}: {att['attachment_name']} ---")
             
             # Extract text from PDF
+            logger.info("Extracting text from PDF...")
             order_text = extract_text_from_pdf_content(att['pdf_content'], att['attachment_name'])
+            logger.info(f"Extracted {len(order_text)} characters from PDF")
             
             # Parse BOL data
+            logger.info("Parsing BOL data...")
             bol_data = parse_bol_data(order_text)
             
             # Initialize log entry
@@ -443,20 +486,26 @@ def process_bol_emails():
             }
             
             # Insert data
+            logger.info("Inserting BOL data into database...")
             success = insert_bol_data_and_log(conn, bol_data, log_entry)
             
             # Log results
+            logger.info("Logging processing results...")
             log_to_sql(conn, log_entry)
             
             processed_count += 1
             if success:
                 success_count += 1
-                logger.info(f"Successfully processed {att['attachment_name']}")
+                logger.info(f"✅ Successfully processed {att['attachment_name']}")
             else:
                 failed_count += 1
+                logger.warning(f"❌ Failed to process {att['attachment_name']}")
+                logger.info("Sending rejection email...")
                 send_rejection_email(config, att["email_subject"], att['pdf_content'], att['attachment_name'])
-                logger.warning(f"Failed to process {att['attachment_name']}")
+            
+            logger.info(f"--- Completed processing {att['attachment_name']} ---")
         
+        logger.info("Closing database connection...")
         conn.close()
         
         result = {
@@ -465,11 +514,13 @@ def process_bol_emails():
             "failed": failed_count
         }
         
-        logger.info(f"BOL processing complete: {result}")
+        logger.info(f"=== BOL Processing Complete ===")
+        logger.info(f"Summary: {result}")
         return result
         
     except Exception as e:
-        logger.error(f"BOL processing failed: {str(e)}")
+        logger.error(f"❌ BOL processing failed with error: {str(e)}")
+        logger.error(f"Error type: {type(e).__name__}")
         raise e
 
 if __name__ == "__main__":

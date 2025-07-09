@@ -27,7 +27,7 @@ env/
 ENV/
 
 # IDE files
-.vscode/
+
 .idea/
 *.swp
 *.swo
@@ -38,3 +38,5 @@ Thumbs.db
 
 # Extracted text files (may contain sensitive data)
 *_extracted_text.txt
+.python_packages
+.venv

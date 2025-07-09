@@ -1,6 +1,6 @@
 # Azure Functions deployment for BOL automation
 PyPDF2==3.0.1
-pyodbc==5.0.1
-azure-functions==1.18.0
-azure-functions-worker==1.0.0
-requests==2.31.0
+pyodbc>=4.0.39
+azure-functions
+azure-functions>=1.18.0
+azure-functions-worker>=1.0.0
