@@ -11,6 +11,9 @@ attachments/
 order_log.csv
 *.log
 
+# Ignore SQL backup folder (old development files)
+sql_backup/
+
 # Python cache
 venv/
 __pycache__/

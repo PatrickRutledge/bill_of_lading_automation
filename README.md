@@ -23,14 +23,16 @@ This system automates the extraction of Bill of Lading (BOL) data from Gmail PDF
 
 ## Database Tables
 
-### dbo.BillOfLadingData
-Primary table for structured BOL data with fields for all extracted information.
+### dbo.orders
+Primary table for structured BOL data with fields for all extracted shipping information including:
+- BOL details (number, references)
+- Shipper and consignee information
+- Carrier and routing details
+- Weights, pieces, and charges
+- Raw PDF text for reference
 
 ### dbo.order_log
 Tracks every processing attempt with status, timestamp, error messages, and count of extracted fields.
-
-### dbo.orders
-Legacy table for raw text storage (maintained for compatibility).
 
 ## Setup
 
@@ -40,7 +42,13 @@ pip install -r requirements.txt
 ```
 
 ### 2. Database Setup
-Run the `setup_database_tables.sql` script on your Azure SQL Database to create the necessary tables and indexes.
+Run the `database_setup_complete.sql` script on your Azure SQL Database to create all necessary tables and columns. This consolidated script:
+- Creates or modifies the `dbo.orders` table with all BOL fields
+- Creates the `dbo.order_log` table for processing tracking
+- Adds performance indexes
+- Is safe to run multiple times (uses IF NOT EXISTS checks)
+
+This replaces all the individual SQL setup files from earlier development.
 
 ### 3. Configuration
 Update the configuration section in `extract_and_insert.py`:
