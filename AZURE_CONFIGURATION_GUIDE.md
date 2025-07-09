@@ -1,12 +1,34 @@
 # Azure Function App Configuration Guide
 
+## Overview
+This guide helps you configure the Azure Function App environment variables for the Bill of Lading automation system. These settings are already configured in the production environment but this guide serves as documentation.
+
+## Important Security Notes
+
+⚠️ **NEVER COMMIT ACTUAL CREDENTIALS TO GIT**
+
+- This guide shows placeholder values only
+- Actual credentials are stored securely in Azure environment variables
+- Production environment variables are already configured
+- For new deployments, replace placeholder values with your actual credentials
+
+## Current Production Status
+
+✅ **CONFIGURED AND RUNNING**
+
+The production Azure Function App is currently configured and running:
+- Function App: `bol-processor-func`
+- Schedule: Daily at 9 AM UTC (`"0 0 9 * * *"`)
+- All environment variables are properly set
+- Database connection and processing confirmed working
+
 ## Step 1: Access Azure Portal
 1. Go to https://portal.azure.com
-2. Sign in with your account: pat@burnfiddlestick.onmicrosoft.com
+2. Sign in with your Azure account
 
 ## Step 2: Navigate to Your Function App
-1. In the search bar, type "emailpdf-2-sql"
-2. Click on your Function App: "emailpdf-2-sql"
+1. In the search bar, type your Function App name (e.g., "bol-processor-func")
+2. Click on your Function App
 
 ## Step 3: Configure Application Settings
 1. In the left menu, click "Configuration"
@@ -17,25 +39,25 @@
 Add these exact settings (one at a time):
 
 **Name:** EMAIL_USER  
-**Value:** patrickscottrutledge@gmail.com
+**Value:** [Your Gmail address]
 
 **Name:** EMAIL_PASS  
-**Value:** maix xlmg dgja criw
+**Value:** [Your Gmail App Password - NOT your regular Gmail password]
 
 **Name:** REJECTION_EMAIL  
-**Value:** pat@burnfiddlesticks.com
+**Value:** [Fallback email address for failed processing notifications]
 
 **Name:** AZURE_SERVER  
-**Value:** mcleod.database.windows.net
+**Value:** [Your Azure SQL server name].database.windows.net
 
 **Name:** AZURE_DATABASE  
-**Value:** OrderEntry
+**Value:** [Your Azure SQL database name]
 
 **Name:** AZURE_USERNAME  
-**Value:** trucker@mcleod.database.windows.net
+**Value:** [Your Azure SQL username]@[server-name]
 
 **Name:** AZURE_PASSWORD  
-**Value:** Pdf4orders!
+**Value:** [Your Azure SQL password]
 
 **Name:** AZURE_DRIVER  
 **Value:** {ODBC Driver 18 for SQL Server}
